@@ -51,7 +51,7 @@ fn check_closure(cx: &Context, expr: &Expr) {
                     // Are the arguments type-adjusted? Then we need the closure
                     return;
                 }
-                let fn_ty = cx.tcx.expr_ty(caller);
+                let fn_ty = cx.tcx.node_id_to_type(caller.id);
                 if let ty::TyBareFn(_, fn_ty) = fn_ty.sty {
                     // Is it an unsafe function? They don't implement the closure traits
                     if fn_ty.unsafety == Unsafety::Unsafe {

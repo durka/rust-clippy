@@ -60,7 +60,7 @@ impl LintPass for StringAdd {
 }
 
 fn is_string(cx: &Context, e: &Expr) -> bool {
-    match_type(cx, walk_ptrs_ty(cx.tcx.expr_ty(e)), &STRING_PATH)
+    match_type(cx, walk_ptrs_ty(cx.tcx.node_id_to_type(e.id)), &STRING_PATH)
 }
 
 fn is_add(cx: &Context, src: &Expr, target: &Expr) -> bool {

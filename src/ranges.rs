@@ -33,7 +33,7 @@ impl LintPass for StepByZero {
 fn is_range(cx: &Context, expr: &Expr) -> bool {
     // No need for walk_ptrs_ty here because step_by moves self, so it
     // can't be called on a borrowed range.
-    let ty = cx.tcx.expr_ty(expr);
+    let ty = cx.tcx.node_id_to_type(expr.id);
     // Note: RangeTo and RangeFull don't have step_by
     match_type(cx, ty, &["core", "ops", "Range"]) || match_type(cx, ty, &["core", "ops", "RangeFrom"])
 }

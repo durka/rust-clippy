@@ -44,7 +44,7 @@ fn check_expr_expd(cx: &Context, expr: &Expr, info: Option<&ExpnInfo>) {
                       "generally you want to avoid `&mut &mut _` if possible")
         }).unwrap_or_else(|| {
             if let TyRef(_, TypeAndMut{ty: _, mutbl: MutMutable}) =
-                cx.tcx.expr_ty(e).sty {
+                cx.tcx.node_id_to_type(e.id).sty {
                     span_lint(cx, MUT_MUT, expr.span,
                               "this expression mutably borrows a mutable reference. \
                                Consider reborrowing")

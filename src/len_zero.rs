@@ -132,7 +132,7 @@ fn has_is_empty(cx: &Context, expr: &Expr) -> bool {
                 |iids| iids.iter().any(|i| is_is_empty(cx, i)))))
     }
 
-    let ty = &walk_ptrs_ty(&cx.tcx.expr_ty(expr));
+    let ty = &walk_ptrs_ty(&cx.tcx.node_id_to_type(expr.id));
     match ty.sty {
         ty::TyTrait(_) => cx.tcx.trait_item_def_ids.borrow().get(
             &ty.ty_to_def_id().expect("trait impl not found")).map_or(false,

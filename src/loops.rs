@@ -199,7 +199,7 @@ impl<'v, 't> Visitor<'v> for VarVisitor<'v, 't> {
 fn is_ref_iterable_type(cx: &Context, e: &Expr) -> bool {
     // no walk_ptrs_ty: calling iter() on a reference can make sense because it
     // will allow further borrows afterwards
-    let ty = cx.tcx.expr_ty(e);
+    let ty = cx.tcx.node_id_to_type(e.id);
     is_array(ty) ||
         match_type(cx, ty, &VEC_PATH) ||
         match_type(cx, ty, &LL_PATH) ||
