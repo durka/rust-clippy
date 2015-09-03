@@ -5,6 +5,7 @@ use syntax::ast_util::{is_comparison_binop, binop_to_string};
 use syntax::codemap::Span;
 use syntax::visit::{FnKind, Visitor, walk_ty};
 use rustc::middle::ty;
+use rustc_front::hir;
 
 use utils::{match_type, snippet, span_lint, span_help_and_lint, in_external_macro};
 use utils::{LL_PATH, VEC_PATH};
@@ -24,7 +25,7 @@ impl LintPass for TypePass {
         lint_array!(BOX_VEC, LINKEDLIST)
     }
 
-    fn check_ty(&mut self, cx: &Context, ast_ty: &ast::Ty) {
+    fn check_ty(&mut self, cx: &Context, ast_ty: &Ty) {
         if let Some(ty) = cx.tcx.ast_ty_to_ty_cache.borrow().get(&ast_ty.id) {
             if let ty::TyBox(ref inner) = ty.sty {
                 if match_type(cx, inner, &VEC_PATH) {
@@ -53,7 +54,7 @@ declare_lint!(pub LET_UNIT_VALUE, Warn,
 
 fn check_let_unit(cx: &Context, decl: &Decl) {
     if let DeclLocal(ref local) = decl.node {
-        let bindtype = &cx.tcx.pat_ty(&local.pat).sty;
+        let bindtype = &cx.tcx.node_id_to_type(local.pat.id).sty;
         if *bindtype == ty::TyTuple(vec![]) {
             if in_external_macro(cx, decl.span) { return; }
             span_lint(cx, LET_UNIT_VALUE, decl.span, &format!(
@@ -87,7 +88,7 @@ impl LintPass for UnitCmp {
     fn check_expr(&mut self, cx: &Context, expr: &Expr) {
         if let ExprBinary(ref cmp, ref left, _) = expr.node {
             let op = cmp.node;
-            let sty = &cx.tcx.expr_ty(left).sty;
+            let sty = &cx.tcx.node_id_to_type(left.id).sty;
             if *sty == ty::TyTuple(vec![]) && is_comparison_binop(op) {
                 let result = match op {
                     BiEq | BiLe | BiGe => "true",
@@ -126,7 +127,7 @@ fn int_ty_to_nbits(typ: &ty::TyS) -> usize {
 
 fn is_isize_or_usize(typ: &ty::TyS) -> bool {
     match typ.sty {
-        ty::TyInt(ast::TyIs) | ty::TyUint(ast::TyUs) => true,
+        ty::TyInt(hir::TyIs) | ty::TyUint(hir::TyUs) => true,
         _ => false
     }
 }
@@ -206,12 +207,12 @@ impl LintPass for CastPass {
 
     fn check_expr(&mut self, cx: &Context, expr: &Expr) {
         if let ExprCast(ref ex, _) = expr.node {
-            let (cast_from, cast_to) = (cx.tcx.expr_ty(ex), cx.tcx.expr_ty(expr));
+            let (cast_from, cast_to) = (cx.tcx.node_id_to_type(ex.id), cx.tcx.node_id_to_type(expr.id));
             if cast_from.is_numeric() && cast_to.is_numeric() && !in_external_macro(cx, expr.span) {
                 match (cast_from.is_integral(), cast_to.is_integral()) {
                     (true, false) => {
                         let from_nbits = int_ty_to_nbits(cast_from);
-                        let to_nbits = if let ty::TyFloat(ast::TyF32) = cast_to.sty {32} else {64};
+                        let to_nbits = if let ty::TyFloat(hir::TyF32) = cast_to.sty {32} else {64};
                         if is_isize_or_usize(cast_from) || from_nbits >= to_nbits {
                             span_precision_loss_lint(cx, expr, cast_from, to_nbits == 64);
                         }
@@ -235,8 +236,8 @@ impl LintPass for CastPass {
                         check_truncation_and_wrapping(cx, expr, cast_from, cast_to);
                     }
                     (false, false) => {
-                        if let (&ty::TyFloat(ast::TyF64),
-                                &ty::TyFloat(ast::TyF32)) = (&cast_from.sty, &cast_to.sty) {
+                        if let (&ty::TyFloat(hir::TyF64),
+                                &ty::TyFloat(hir::TyF32)) = (&cast_from.sty, &cast_to.sty) {
                             span_lint(cx, CAST_POSSIBLE_TRUNCATION,
                                 expr.span,
                                 "casting f64 to f32 may truncate the value");
@@ -320,7 +321,7 @@ fn check_fndecl(cx: &Context, decl: &FnDecl) {
     }
 }
 
-fn check_type(cx: &Context, ty: &ast::Ty) {
+fn check_type(cx: &Context, ty: &Ty) {
     if in_external_macro(cx, ty.span) { return; }
     let score = {
         let mut visitor = TypeComplexityVisitor { score: 0, nest: 1 };
@@ -343,7 +344,7 @@ struct TypeComplexityVisitor {
 }
 
 impl<'v> Visitor<'v> for TypeComplexityVisitor {
-    fn visit_ty(&mut self, ty: &'v ast::Ty) {
+    fn visit_ty(&mut self, ty: &'v Ty) {
         let (add_score, sub_nest) = match ty.node {
             // _, &x and *x have only small overhead; don't mess with nesting level
             TyInfer |

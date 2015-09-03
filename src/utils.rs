@@ -1,9 +1,10 @@
 use rustc::lint::*;
 use syntax::ast::*;
 use syntax::codemap::{ExpnInfo, Span, ExpnFormat};
-use rustc::ast_map::Node::NodeExpr;
+use rustc::front::map::Node::NodeExpr;
 use rustc::middle::def_id::DefId;
 use rustc::middle::ty;
+use rustc_front::hir;
 use std::borrow::Cow;
 
 // module DefPaths for certain structs/enums we check for
@@ -143,7 +144,7 @@ fn trim_multiline_inner(s: Cow<str>, ignore_first: bool, ch: char) -> Cow<str> {
 }
 
 /// get a parent expr if any – this is useful to constrain a lint
-pub fn get_parent_expr<'c>(cx: &'c Context, e: &Expr) -> Option<&'c Expr> {
+pub fn get_parent_expr<'c>(cx: &'c Context, e: &Expr) -> Option<&'c hir::Expr> {
     let map = &cx.tcx.map;
     let node_id : NodeId = e.id;
     let parent_id : NodeId = map.get_parent_node(node_id);

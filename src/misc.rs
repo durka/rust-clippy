@@ -4,8 +4,9 @@ use syntax::ast::*;
 use syntax::ast_util::{is_comparison_binop, binop_to_string};
 use syntax::codemap::{Span, Spanned};
 use syntax::visit::FnKind;
-use rustc::ast_map::Node::*;
+use rustc::front::map::Node::*;
 use rustc::middle::ty;
+use rustc_front::hir;
 
 use utils::{match_path, snippet, span_lint, walk_ptrs_ty};
 use consts::constant;
@@ -94,9 +95,9 @@ impl LintPass for FloatCmp {
                 }
                 let parent_id = cx.tcx.map.get_parent(expr.id);
                 match cx.tcx.map.find(parent_id) {
-                    Some(NodeItem(&Item{ ref ident, .. })) |
-                    Some(NodeTraitItem(&TraitItem{ id: _, ref ident, .. })) |
-                    Some(NodeImplItem(&ImplItem{ id: _, ref ident, .. })) => {
+                    Some(NodeItem(&hir::Item{ ref ident, .. })) |
+                    Some(NodeTraitItem(&hir::TraitItem{ id: _, ref ident, .. })) |
+                    Some(NodeImplItem(&hir::ImplItem{ id: _, ref ident, .. })) => {
                         let name = ident.name.as_str();
                         if &*name == "eq" || &*name == "ne" ||
                                 name.starts_with("eq_") ||
@@ -117,7 +118,7 @@ impl LintPass for FloatCmp {
 }
 
 fn is_float(cx: &Context, expr: &Expr) -> bool {
-    if let ty::TyFloat(_) = walk_ptrs_ty(cx.tcx.expr_ty(expr)).sty {
+    if let ty::TyFloat(_) = walk_ptrs_ty(cx.tcx.node_id_to_type(expr.id)).sty {
         true
     } else {
         false
@@ -174,7 +175,7 @@ fn check_to_owned(cx: &Context, expr: &Expr, other_span: Span) {
 
 fn is_str_arg(cx: &Context, args: &[P<Expr>]) -> bool {
     args.len() == 1 && if let ty::TyStr =
-        walk_ptrs_ty(cx.tcx.expr_ty(&args[0])).sty { true } else { false }
+        walk_ptrs_ty(cx.tcx.node_id_to_type(&args[0].id)).sty { true } else { false }
 }
 
 declare_lint!(pub MODULO_ONE, Warn, "taking a number modulo 1, which always returns 0");

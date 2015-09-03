@@ -4,8 +4,11 @@ use rustc::lint::Context;
 use rustc::middle::const_eval::lookup_const_by_id;
 use rustc::middle::def::PathResolution;
 use rustc::middle::def::Def::*;
-use syntax::ast::*;
+//use syntax::ast::*;
+use rustc_front::hir::*;
+use rustc_front::lowering::lower_expr;
 use syntax::ptr::P;
+use syntax::ast;
 use std::cmp::PartialOrd;
 use std::cmp::Ordering::{self, Greater, Less, Equal};
 use std::rc::Rc;
@@ -277,9 +280,9 @@ fn sub_int(l: u64, lty: LitIntType, r: u64, rty: LitIntType, neg: bool) ->
 }
 
 
-pub fn constant(lcx: &Context, e: &Expr) -> Option<(Constant, bool)> {
+pub fn constant(lcx: &Context, e: &ast::Expr) -> Option<(Constant, bool)> {
     let mut cx = ConstEvalContext { lcx: Some(lcx), needed_resolution: false };
-    cx.expr(e).map(|cst| (cst, cx.needed_resolution))
+    cx.expr(&lower_expr(e)).map(|cst| (cst, cx.needed_resolution))
 }
 
 pub fn constant_simple(e: &Expr) -> Option<Constant> {

@@ -7,6 +7,8 @@
 extern crate syntax;
 #[macro_use]
 extern crate rustc;
+#[macro_use]
+extern crate rustc_front;
 
 // Only for the compile time checking of paths
 extern crate core;
