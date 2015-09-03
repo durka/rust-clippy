@@ -4,7 +4,8 @@ use rustc::middle::def::*;
 use syntax::ast::*;
 use syntax::ast_util::is_comparison_binop;
 use syntax::codemap::Span;
-
+use rustc_front::hir;
+use rustc_front::lowering::lower_expr;
 use utils::span_lint;
 
 declare_lint! {
@@ -178,14 +179,14 @@ fn check_ineffective_gt(cx: &Context, span: Span, m: u64, c: u64, op: &str) {
     }
 }
 
-fn fetch_int_literal(cx: &Context, lit : &Expr) -> Option<u64> {
+fn fetch_int_literal_inner<'a,'b>(cx: &'a Context, lit: &'b hir::Expr) -> Option<u64> {
     match lit.node {
-        ExprLit(ref lit_ptr) => {
-            if let &LitInt(value, _) = &lit_ptr.node {
+        hir::ExprLit(ref lit_ptr) => {
+            if let &hir::LitInt(value, _) = &lit_ptr.node {
                 Option::Some(value) //TODO: Handle sign
             } else { Option::None }
         },
-        ExprPath(_, _) => {
+        hir::ExprPath(_, _) => {
             // Important to let the borrow expire before the const lookup to avoid double
             // borrowing.
             let def_map = cx.tcx.def_map.borrow();
@@ -195,7 +196,11 @@ fn fetch_int_literal(cx: &Context, lit : &Expr) -> Option<u64> {
             }
         }
         .and_then(|def_id| lookup_const_by_id(cx.tcx, def_id, Option::None))
-        .and_then(|l| fetch_int_literal(cx, l)),
+        .and_then(|l| fetch_int_literal_inner(cx, l)),
         _ => Option::None
     }
+}
+
+fn fetch_int_literal(cx: &Context, lit : &Expr) -> Option<u64> {
+    fetch_int_literal_inner(cx, &lower_expr(lit));
 }

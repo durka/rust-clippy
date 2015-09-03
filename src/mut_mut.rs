@@ -2,7 +2,7 @@ use rustc::lint::*;
 use syntax::ast::*;
 use syntax::codemap::ExpnInfo;
 use rustc::middle::ty::{TypeAndMut, TyRef};
-
+use rustc_front::hir;
 use utils::{in_macro, span_lint};
 
 declare_lint!(pub MUT_MUT, Warn,
@@ -43,7 +43,7 @@ fn check_expr_expd(cx: &Context, expr: &Expr, info: Option<&ExpnInfo>) {
             span_lint(cx, MUT_MUT, expr.span,
                       "generally you want to avoid `&mut &mut _` if possible")
         }).unwrap_or_else(|| {
-            if let TyRef(_, TypeAndMut{ty: _, mutbl: MutMutable}) =
+            if let TyRef(_, TypeAndMut{ty: _, mutbl: hir::MutMutable}) =
                 cx.tcx.node_id_to_type(e.id).sty {
                     span_lint(cx, MUT_MUT, expr.span,
                               "this expression mutably borrows a mutable reference. \

@@ -144,7 +144,7 @@ fn trim_multiline_inner(s: Cow<str>, ignore_first: bool, ch: char) -> Cow<str> {
 }
 
 /// get a parent expr if any – this is useful to constrain a lint
-pub fn get_parent_expr<'c>(cx: &'c Context, e: &Expr) -> Option<&'c hir::Expr> {
+pub fn get_parent_expr<'c>(cx: &'c Context, e: &Expr) -> Option<&'c Expr> {
     let map = &cx.tcx.map;
     let node_id : NodeId = e.id;
     let parent_id : NodeId = map.get_parent_node(node_id);

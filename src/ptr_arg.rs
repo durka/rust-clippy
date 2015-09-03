@@ -5,7 +5,7 @@
 use rustc::lint::*;
 use syntax::ast::*;
 use rustc::middle::ty;
-
+use rustc_front::hir;
 use utils::{span_lint, match_type};
 use utils::{STRING_PATH, VEC_PATH};
 
@@ -45,8 +45,8 @@ impl LintPass for PtrArg {
 
 fn check_fn(cx: &Context, decl: &FnDecl) {
     for arg in &decl.inputs {
-        if let Some(pat_ty) = cx.tcx.pat_ty_opt(&arg.pat) {
-            if let ty::TyRef(_, ty::TypeAndMut { ty, mutbl: MutImmutable }) = pat_ty.sty {
+        if let Some(pat_ty) = cx.tcx.node_id_to_type_opt(arg.pat.id) {
+            if let ty::TyRef(_, ty::TypeAndMut { ty, mutbl: hir::MutImmutable }) = pat_ty.sty {
                 if match_type(cx, ty, &VEC_PATH) {
                     span_lint(cx, PTR_ARG, arg.ty.span,
                               "writing `&Vec<_>` instead of `&[_]` involves one more reference \
