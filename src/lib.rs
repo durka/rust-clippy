@@ -2,6 +2,7 @@
 #![feature(rustc_private, collections)]
 #![feature(iter_arith)]
 #![feature(custom_attribute)]
+#![feature(slice_patterns)]
 #![allow(unknown_lints)]
 
 // this only exists to allow the "dogfood" integration test to work
@@ -134,7 +135,7 @@ pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_late_lint_pass(box no_effect::NoEffectPass);
     reg.register_late_lint_pass(box map_clone::MapClonePass);
     reg.register_late_lint_pass(box temporary_assignment::TemporaryAssignmentPass);
-    reg.register_late_lint_pass(box transmute::UselessTransmute);
+    reg.register_late_lint_pass(box transmute::BadTransmute);
     reg.register_late_lint_pass(box cyclomatic_complexity::CyclomaticComplexity::new(25));
     reg.register_late_lint_pass(box escape::EscapePass);
     reg.register_early_lint_pass(box misc_early::MiscEarly);
@@ -248,6 +249,7 @@ pub fn plugin_registrar(reg: &mut Registry) {
         strings::STRING_LIT_AS_BYTES,
         temporary_assignment::TEMPORARY_ASSIGNMENT,
         transmute::USELESS_TRANSMUTE,
+        transmute::DANGEROUS_TRANSMUTE,
         types::BOX_VEC,
         types::CHAR_LIT_AS_U8,
         types::LET_UNIT_VALUE,
