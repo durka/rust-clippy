@@ -1,6 +1,6 @@
 #![feature(plugin)]
 #![plugin(clippy)]
-#![deny(useless_transmute)]
+#![deny(useless_transmute, dangerous_transmute)]
 
 extern crate core;
 
@@ -17,6 +17,7 @@ unsafe fn _generic<'a, T, U: 'a>(t: &'a T) {
     //~^ ERROR transmute from a type (`&'a T`) to itself
 
     let _: &'a U = core::intrinsics::transmute(t);
+    //~^ ERROR transmute between `repr(rust)` types
 }
 
 fn main() {
@@ -37,9 +38,22 @@ fn main() {
         //~^ ERROR transmute from a type (`collections::vec::Vec<i32>`) to itself
 
         let _: Vec<u32> = core::intrinsics::transmute(my_vec());
+        //~^ ERROR transmute between `repr(rust)` types
+
         let _: Vec<u32> = core::mem::transmute(my_vec());
+        //~^ ERROR transmute between `repr(rust)` types
+
         let _: Vec<u32> = std::intrinsics::transmute(my_vec());
+        //~^ ERROR transmute between `repr(rust)` types
+
         let _: Vec<u32> = std::mem::transmute(my_vec());
+        //~^ ERROR transmute between `repr(rust)` types
+
         let _: Vec<u32> = my_transmute(my_vec());
+        //~^ ERROR transmute between `repr(rust)` types
+        
+        let _: i32 = my_transmute(42u32); // ok to transmute primitives
+
+        // FIXME repr(C) struct containing non-repr(C) struct
     }
 }
